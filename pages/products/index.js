@@ -6,29 +6,47 @@ import { useState, useEffect } from "react";
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState(null); //"Food", "Technology"
+  const [shouldReload, setShouldReload] = useState(true);
 
   useEffect(() => {
     const getProducts = async () => {
-      try {
-        const url = categoryFilter
-          ? `/api/products?category=${categoryFilter}`
-          : "/api/products";
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
-        } else {
-          throw new Error(
-            `Fetch fehlgeschlagen mit Status: ${response.status}`
-          );
+      if (shouldReload) {
+        try {
+          const url = categoryFilter
+            ? `/api/products?category=${categoryFilter}`
+            : "/api/products";
+          const response = await fetch(url);
+          if (response.ok) {
+            const data = await response.json();
+            setProducts(data);
+          } else {
+            throw new Error(
+              `Fetch fehlgeschlagen mit Status: ${response.status}`
+            );
+          }
+        } catch (error) {
+          console.log(error);
+          alert(error.message);
         }
-      } catch (error) {
-        console.log(error);
-        alert(error.message);
       }
     };
     getProducts();
-  }, [categoryFilter]);
+    setShouldReload(false);
+  }, [categoryFilter, shouldReload]);
+
+  const deleteProduct = async (id) => {
+    try {
+      const response = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      if (response.ok) {
+        setShouldReload(true);
+      } else {
+        throw new Error(`Fetch fehlgeschlagen mit Status: ${response.status}`);
+      }
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
+    }
+  };
 
   return (
     <>
@@ -38,7 +56,7 @@ const Products = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div>
-        <h1 className="test">Products Dashboard</h1>
+        <h1 className="test">Products Dashboard von Leon</h1>
         <select
           onChange={(event) => {
             if (event.target.value === "all") {
@@ -56,9 +74,14 @@ const Products = () => {
         <ul className={styles["product-list"]}>
           {products.map((product) => {
             return (
-              <li key={product.id}>
-                <Link href={`/products/${product.id}`}>{product.name}</Link>
-              </li>
+              <>
+                <li key={product._id}>
+                  <Link href={`/products/${product._id}`}>{product.name}</Link>
+                </li>
+                <button onClick={() => deleteProduct(product._id)}>
+                  Lösch mich
+                </button>
+              </>
             );
           })}
         </ul>
